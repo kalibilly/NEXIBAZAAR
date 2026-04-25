@@ -7,6 +7,7 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   bool _isLoading = false;
   String? _error;
+  bool _isInitialized = false;
 
   AuthProvider(this.authService);
 
@@ -14,8 +15,33 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAuthenticated => _user != null;
+  bool get isInitialized => _isInitialized;
   bool get isSeller => _user?.accountType == 'seller';
   bool get isCustomer => _user?.accountType == 'customer';
+
+  /// Initialize auth on app startup - restores token and user
+  Future<void> initialize() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // Check if token exists in storage
+      if (authService.apiClient.isAuthenticated) {
+        // Try to load user profile with existing token
+        _user = await authService.getProfile();
+        print('✅ User restored from token: ${_user?.username}');
+      }
+    } catch (e) {
+      print('⚠️ Could not restore user: $e');
+      authService.apiClient.clearToken();
+      _user = null;
+    } finally {
+      _isLoading = false;
+      _isInitialized = true;
+      notifyListeners();
+    }
+  }
 
   Future<bool> register({
     required String username,
