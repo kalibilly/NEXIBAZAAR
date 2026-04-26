@@ -1,0 +1,33 @@
+name: Build Nexibazaar APK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend
+
+      - name: Build APK
+        run: flutter build apk --release
+        working-directory: frontend
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: nexibazaar-apk
+          path: frontend/build/app/outputs/flutter-apk/app-release.apk
