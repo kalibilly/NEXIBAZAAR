@@ -20,14 +20,14 @@ jobs:
 
       - name: Install Dependencies
         run: flutter pub get
-        working-directory: frontend
+        working-directory: frontend_flutter
 
       - name: Build APK
         run: flutter build apk --release
-        working-directory: frontend
+        working-directory: frontend_flutter
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nexibazaar-apk
-          path: frontend/build/app/outputs/flutter-apk/app-release.apk
+          path: frontend_flutter/build/app/outputs/flutter-apk/app-release.apk
