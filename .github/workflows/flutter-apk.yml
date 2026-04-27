@@ -1,0 +1,53 @@
+name: Build Nexibazaar APK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build APK
+        run: flutter build apk --release -v
+        working-directory: frontend_flutter
+        env:
+          GRADLE_USER_HOME: ${{ runner.temp }}/.gradle
+          GRADLE_OPTS: '-Xmx2048m -Dorg.gradle.daemon=false'
+
+      - name: Get APK Info
+        run: |
+          if [ -f frontend_flutter/build/app/outputs/flutter-apk/app-release.apk ]; then
+            ls -lh frontend_flutter/build/app/outputs/flutter-apk/app-release.apk
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: nexibazaar-apk
+          path: frontend_flutter/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
