@@ -1,0 +1,253 @@
+name: Multi-Platform Build (All Platforms)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # Android Build (Linux runner)
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build APK
+        run: flutter build apk --release -v
+        working-directory: frontend_flutter
+        env:
+          GRADLE_USER_HOME: ${{ runner.temp }}/.gradle
+          GRADLE_OPTS: '-Xmx2048m -Dorg.gradle.daemon=false'
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: frontend_flutter/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  # iOS Build (macOS runner)
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build iOS
+        run: flutter build ios --release -v
+        working-directory: frontend_flutter
+
+      - name: Upload iOS Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: frontend_flutter/build/ios/Release-iphoneos/
+          if-no-files-found: warn
+          retention-days: 30
+
+  # macOS Build (macOS runner)
+  build-macos:
+    name: Build macOS App
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build macOS
+        run: flutter build macos --release -v
+        working-directory: frontend_flutter
+
+      - name: Upload macOS Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: frontend_flutter/build/macos/Build/Products/Release/
+          if-no-files-found: warn
+          retention-days: 30
+
+  # Windows Build (Windows runner)
+  build-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build Windows
+        run: flutter build windows --release -v
+        working-directory: frontend_flutter
+
+      - name: Upload Windows Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: frontend_flutter/build/windows/runner/Release/
+          if-no-files-found: warn
+          retention-days: 30
+
+  # Linux Build (Ubuntu runner)
+  build-linux:
+    name: Build Linux App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libx11-dev \
+            pkg-config \
+            cmake \
+            ninja-build \
+            libssl-dev \
+            libsecret-1-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Enable Linux Desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build Linux
+        run: flutter build linux --release -v
+        working-directory: frontend_flutter
+
+      - name: Upload Linux Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: frontend_flutter/build/linux/x64/release/bundle/
+          if-no-files-found: warn
+          retention-days: 30
+
+  # Web Build (Ubuntu runner)
+  build-web:
+    name: Build Web App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Enable Web
+        run: flutter config --enable-web
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build Web
+        run: flutter build web --release -v
+        working-directory: frontend_flutter
+
+      - name: Upload Web Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: frontend_flutter/build/web/
+          if-no-files-found: error
+          retention-days: 30
+
+  # Summary Job
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [build-android, build-ios, build-macos, build-windows, build-linux, build-web]
+    if: always()
+    
+    steps:
+      - name: Check Build Status
+        run: |
+          echo "=== NexiBazaar Multi-Platform Build Summary ==="
+          echo "Android APK: ${{ needs.build-android.result }}"
+          echo "iOS Build: ${{ needs.build-ios.result }}"
+          echo "macOS Build: ${{ needs.build-macos.result }}"
+          echo "Windows Build: ${{ needs.build-windows.result }}"
+          echo "Linux Build: ${{ needs.build-linux.result }}"
+          echo "Web Build: ${{ needs.build-web.result }}"
+          
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-builds
+
+      - name: List Build Artifacts
+        run: |
+          echo "=== Available Artifacts ==="
+          find all-builds -type f -exec ls -lh {} \;

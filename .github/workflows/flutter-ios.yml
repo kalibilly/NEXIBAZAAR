@@ -1,0 +1,44 @@
+name: Build iOS App
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build iOS App
+        run: flutter build ios --release -v
+        working-directory: frontend_flutter
+
+      - name: Create Simulator Build (Optional)
+        run: flutter build ios --release --simulator
+        working-directory: frontend_flutter
+        continue-on-error: true
+
+      - name: Upload iOS Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: frontend_flutter/build/ios/Release-iphoneos/
+          if-no-files-found: warn
+          retention-days: 30

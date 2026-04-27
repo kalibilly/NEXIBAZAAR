@@ -1,0 +1,47 @@
+name: Build Windows App
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: frontend_flutter
+
+      - name: Build Windows App
+        run: flutter build windows --release -v
+        working-directory: frontend_flutter
+
+      - name: Create Installer (Optional - requires NSIS)
+        run: |
+          if exist "frontend_flutter\build\windows\runner\Release\nexi_bazaar.exe" (
+            echo "Windows executable created successfully"
+          )
+        shell: cmd
+        continue-on-error: true
+
+      - name: Upload Windows Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: frontend_flutter/build/windows/runner/Release/
+          if-no-files-found: warn
+          retention-days: 30
