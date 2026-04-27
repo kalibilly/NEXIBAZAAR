@@ -1,0 +1,23 @@
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
+#include "Generated.xcconfig"
+
+// iOS build settings
+PRODUCT_NAME = NexiBazaar
+BUNDLE_DISPLAY_NAME = NexiBazaar
+PRODUCT_BUNDLE_IDENTIFIER = com.nexibazaar.nexi_bazaar
+MARKETING_VERSION = 1.0.0
+CURRENT_PROJECT_VERSION = 1
+DEVELOPMENT_TEAM =
+CODE_SIGN_IDENTITY = iPhone Developer
+CODE_SIGN_STYLE = Automatic
+
+// Deployment target
+IPHONEOS_DEPLOYMENT_TARGET = 12.0
+
+// Build settings
+ENABLE_BITCODE = NO
+SWIFT_COMPILATION_MODE = wholemodule
+
+// Optimization
+GCC_OPTIMIZATION_LEVEL = 3
+SWIFT_OPTIMIZATION_LEVEL = -Owholemodule

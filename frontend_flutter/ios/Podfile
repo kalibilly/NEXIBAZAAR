@@ -1,0 +1,64 @@
+# iOS Build Configuration for NexiBazaar
+
+platform :ios, '12.0'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+        '$(inherited)',
+        'FLUTTER_ROOT=\$(SRCROOT)/Flutter',
+        'FLUTTER_APPLICATION_PATH=\$(SRCROOT)/..',
+        'FLUTTER_TARGET=\$(SRCROOT)/../lib/main.dart',
+        'FLUTTER_BUILD_MODE=release',
+        'FLUTTER_BUILD_DIR=build',
+        'SYMROOT=\${SOURCE_ROOT}/../build/ios',
+        'FLUTTER_FRAMEWORK_DIR=\$(FLUTTER_ROOT)/Flutter.framework',
+        'FLUTTER_BUILD_NAME=1.0.0',
+        'FLUTTER_BUILD_NUMBER=1',
+      ]
+    end
+  end
+end
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..',
+    'Flutter', 'Flutter-Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+def flutter_version_name
+  list = File.read(File.join(flutter_root, 'version')).split("\n")
+  list.each do |line|
+    matches = line.match(/^FLUTTER_VERSION=(.*)/)
+    return matches[1].strip if matches
+  end
+end
+
+def flutter_version_code
+  File.read(File.join(flutter_root, 'version')).split("\n").first.split('=').last.strip
+end
+
+def flutter_additional_ios_build_settings(target)
+  return unless File.exist?(File.join(flutter_root, 'Flutter', 'Flutter-Generated.xcconfig'))
+  require File.expand_path(File.join(packages_path, 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+  target.build_configurations.each do |config|
+    unless config.base_configuration_reference.real_path.basename(config.real_path.extension).to_s == 'Flutter-Generated'
+      eval_podfile_content = File.read(File.join(flutter_root, 'Flutter', 'Flutter-Generated.xcconfig'))
+      eval(eval_podfile_content)
+    end
+  end
+end
